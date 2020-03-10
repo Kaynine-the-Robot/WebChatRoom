@@ -35,6 +35,9 @@ io.on('connection', socket => {
     while(userList.includes(socket.username)){
         socket.username = randColor() + randAnimal() + addUser();
     }
+    // Emits welcome event for new user and adds their username to the username list
+    socket.emit("welcome", { name: socket.username, users: userList, mLog: messageLog, uColors: userColorDict });
+    // This next section is for checking cookies upon login, if cookies exist they will be given to the new user
     socket.emit("requestCookies");
     socket.on("getCookies", message => {
         var ca = message.split(";")
@@ -54,14 +57,16 @@ io.on('connection', socket => {
             if(i !== ca.length){
                 socket.username = ca[i].split("=")[0];
                 colorCookie = ca[i].split("=")[1];
+                if(colorCookie !== "default") {
+                    userColorDict[socket.username] = colorCookie;
+                }
+                socket.emit('changeColor', { color: colorCookie });
+                socket.emit('changeNick', { name: socket.username });
             }
         }
         socket.emit("cookie", { name: socket.username });
-        // cookieList.push(socket.username + "=cookiename");
-        // Emits welcome event for new user and adds their username to the username list
-        socket.emit("welcome", { name: socket.username, users: userList, mLog: messageLog, uColors: userColorDict });
         userList.push(socket.username);
-        // Emits to everyone to show the new user has joined and update the user count and list
+        // Emits to everyone to show the new user has joined and update the user count and list on the user screens
         io.emit("showMessage", { name: socket.username, message: socket.username + ' HAS JOINED', time: getTime(), color:"default" });
         messageLog.push({ name: socket.username, message: socket.username + ' HAS JOINED', time: getTime(), color: "default" });
         io.emit("addUser", { name: socket.username, count: numUsers, color: colorCookie });
@@ -87,7 +92,7 @@ io.on('connection', socket => {
                 if (index !== -1) {
                     userList[index] = socket.username;
                 }
-                // Change the color dictionary entry to be for the nickname **Might not need**
+                // Change the color dictionary entry to be for the nickname
                 if (message.color !== "default"){
                     userColorDict[socket.username] = userColorDict[message.name];
                     delete userColorDict[message.name];
@@ -99,8 +104,10 @@ io.on('connection', socket => {
             }
             
         }
+        // Handling if the user is trying to change their color
         else if(message.message.slice(0,11) === "/nickcolor "){
             const test = message.message.slice(11);
+            // Making sure the RRGGBB value is valid
             if(parseInt(test, 16).toString(16) === test.toLowerCase()){
                 socket.emit('changeColor', { color: test });
                 io.emit('updateColor', { name: message.name, color: test });

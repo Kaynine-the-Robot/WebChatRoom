@@ -70,7 +70,6 @@ socket.on('welcome', message => {
     newMessage.appendChild(text)
     welcome.appendChild(newMessage)
 
-    //const messages = document.createElement('div')
     // Setting up all the previous messages of the chat room
     for (mes of message.mLog){
         const messages = document.createElement('div')
@@ -129,10 +128,12 @@ socket.on('remUser', message => {
 })
 
 socket.on('changeNick', message => {
-    document.cookie = this.name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    if(this.name !== null){
+        document.cookie = this.name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
     this.name = message.name;
     var item = document.getElementById("welcomeMessage");
-    item.innerHTML =  "Welcome " + name;
+    item.innerHTML =  "Welcome " + this.name;
     document.cookie = this.name + "=" + this.color + ";" + "max-age=180;";
 })
 
